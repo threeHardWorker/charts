@@ -3,6 +3,8 @@ import sys
 import time
 
 import os
+
+from datetime import datetime, timedelta
 from influxdb import client as influxdb
 
 
@@ -57,7 +59,7 @@ if __name__ == '__main__':
     datapath = sys.argv[1]
     instrument = sys.argv[2]
     sdate = sys.argv[3]
-    sdate = '%s-%s-%sT00:00:00Z' % (sdate[0:4], sdate[4:6], sdate[6:])
+    # sdate = '%s-%s-%sT00:00:00Z' % (sdate[0:4], sdate[4:6], sdate[6:])
     # print sdate
 
     dir_path = os.path.join(datapath, instrument)
@@ -66,13 +68,19 @@ if __name__ == '__main__':
 
     db = influxdb.InfluxDBClient("172.17.0.12", 18081, "admin", "gongxifacai", "tick")
 
-    days_sql = "select count(volume) from %s where time >= '%s' group by time(1d) tz('Asia/Shanghai')" % (instrument, sdate)
-    # print days_sql
-    result = db.query(days_sql)
+    # days_sql = "select count(volume) from %s where time >= '%s' group by time(1d) tz('Asia/Shanghai')" % (instrument, sdate)
+    # # print days_sql
+    # result = db.query(days_sql)
+    # days = []
+    # for row in result[instrument]:
+    #     # if row.get('count') > 0:
+    #     days.append(row.get('time').replace('+08:00', 'Z'))
+    start_date = datetime.strptime(sdate, '%Y%m%d')
+    end_date = datetime.today()
     days = []
-    for row in result[instrument]:
-        if row.get('count') > 0:
-            days.append(row.get('time').replace('+08:00', 'Z'))
+    for i in range(0, (end_date - start_date).days + 1):
+        day = start_date + timedelta(days=i)
+        days.append(day.strftime('%Y-%m-%dT%H:%M:%SZ'))
     format_days = []
     for i in range(0, len(days)):
         sql = "select * from %s where time >= '%s'" % (instrument, days[i])
